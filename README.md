@@ -53,6 +53,8 @@ An AI SaaS-style chatbot with authentication, admin controls, RAG, voice support
 ---
 
 ## 📂 Project Structure
+
+```
 my_chatbot/
 ├── app.py
 ├── auth.py
@@ -60,83 +62,108 @@ my_chatbot/
 ├── .env (local only)
 ├── .gitignore
 └── README.md
-
+```
 
 ---
 
 ## ⚙️ Setup & Installation
 
-### 1️⃣ Clone Repository
+### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/DhanalaxmiSanapala2005/my_chatbot.git
 cd my_chatbot
-2️⃣ Create Virtual Environment
+```
+
+### 2️⃣ Create Virtual Environment
+```bash
 python -m venv venv
-venv\Scripts\activate        # Windows
-source venv/bin/activate     # Mac/Linux
-3️⃣ Install Dependencies
+```
+
+Activate it:
+
+**Windows**
+```bash
+venv\Scripts\activate
+```
+
+**Mac / Linux**
+```bash
+source venv/bin/activate
+```
+
+### 3️⃣ Install Dependencies
+```bash
 pip install -r requirements.txt
-4️⃣ Create .env File
+```
+
+### 4️⃣ Create `.env` File
+
+Create a file named `.env` and add:
+
+```env
 GROQ_API_KEY=your_groq_api_key
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 HF_API_TOKEN=your_huggingface_token
 SMTP_EMAIL=your_email@gmail.com
 SMTP_APP_PASSWORD=your_app_password
-5️⃣ Run the App
+```
+
+### 5️⃣ Run the Application
+```bash
 streamlit run app.py
-🔑 Getting API Keys
-Service	Link	Cost
-Groq	https://console.groq.com
-	Free
-ElevenLabs	https://elevenlabs.io
-	Free tier
-HuggingFace	https://huggingface.co
-	Free
-🌐 Deployment (Streamlit Cloud)
+```
 
-Push code to GitHub (never push .env)
+---
 
-Go to https://share.streamlit.io
+## 🔑 Getting API Keys
 
-Connect your repository
+| Service | URL | Cost |
+|----------|------|------|
+| Groq | https://console.groq.com | Free |
+| ElevenLabs | https://elevenlabs.io | Free Tier |
+| HuggingFace | https://huggingface.co | Free |
 
-Set Main file → app.py
+---
 
-Add secrets in Advanced Settings
+## 🌐 Deployment (Streamlit Cloud)
 
-Click Deploy 🚀
+1. Push code to GitHub (never push `.env`)
+2. Go to https://share.streamlit.io
+3. Connect your repository
+4. Set Main file → `app.py`
+5. Add secrets in **Advanced Settings**
+6. Click Deploy 🚀
 
-🔒 Security
+---
 
-Passwords hashed with bcrypt
+## 🔒 Security
 
-API keys stored securely in .env
+- Passwords hashed with bcrypt  
+- API keys stored securely in `.env`  
+- `.env` and `chatbot.db` excluded via `.gitignore`  
+- Rate limiting to prevent API abuse  
+- Email-based password reset with expiring tokens  
 
-.env and chatbot.db excluded via .gitignore
+---
 
-Rate limiting to prevent API abuse
+## 🗺️ Roadmap
 
-Email-based password reset with expiring tokens
+- 🌐 Custom domain deployment  
+- 💳 Razorpay payment integration  
+- 🎨 AI image generation  
+- 🔒 Multi-tenant architecture  
+- 📊 Usage-based billing  
+- 🧠 Vector-based RAG with ChromaDB  
 
-🗺️ Roadmap
+---
 
-🌐 Custom domain deployment
+## 👩‍💻 Built By
 
-💳 Razorpay payment integration
+**Dhanalaxmi Sanapala**  
+GitHub: https://github.com/DhanalaxmiSanapala2005  
 
-🎨 AI image generation
+---
 
-🔒 Multi-tenant architecture
-
-📊 Usage-based billing
-
-🧠 Vector-based RAG with ChromaDB
-
-👩‍💻 Built By
-
-Dhanalaxmi Sanapala
-GitHub: https://github.com/DhanalaxmiSanapala2005
-
-📄 License
+## 📄 License
 
 For educational and personal use.
