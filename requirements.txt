@@ -4,9 +4,9 @@ elevenlabs
 python-dotenv
 duckduckgo-search
 deep-translator
-PyMuPDF
-pandas
+pymupdf
 requests
 SpeechRecognition
-pyaudio
+pandas
 bcrypt
+replicate
