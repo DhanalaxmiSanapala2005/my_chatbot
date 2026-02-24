@@ -1,0 +1,12 @@
+streamlit
+groq
+elevenlabs
+python-dotenv
+duckduckgo-search
+deep-translator
+PyMuPDF
+pandas
+requests
+SpeechRecognition
+pyaudio
+bcrypt
