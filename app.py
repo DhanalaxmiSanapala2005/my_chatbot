@@ -793,31 +793,40 @@ else:
         except:
             st.caption("🔊 Voice available in full deployment")
 
-    # ── FIX 4: IMAGE GENERATION — Pollinations AI (free, no API key) ──
     def generate_image_free(prompt):
         import urllib.parse
         clean = prompt.strip()
-        for kw in ["generate","create","draw","make","show me","give me"]:
+        for kw in ["generate","create","draw","make","show me","give me","an image of","a picture of"]:
             clean = clean.lower().replace(kw, "").strip()
-        clean = (clean or prompt) + ", highly detailed, beautiful, 4k"
+        clean = (clean or prompt).strip()
 
-        # Method 1: Pollinations flux model
+        # Method 1: Pollinations turbo (fastest ~5-10s)
         try:
             encoded = urllib.parse.quote(clean)
-            seed = abs(hash(prompt)) % 99999
-            url = f"https://image.pollinations.ai/prompt/{encoded}?width=768&height=768&nologo=true&seed={seed}&model=flux"
-            res = requests.get(url, timeout=90)
-            if res.status_code == 200 and len(res.content) > 5000:
+            seed = abs(hash(prompt)) % 9999
+            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}&model=turbo"
+            res = requests.get(url, timeout=30)
+            if res.status_code == 200 and len(res.content) > 3000:
                 return res.content
         except:
             pass
 
-        # Method 2: Pollinations default model fallback
+        # Method 2: Pollinations default (fast fallback)
         try:
             encoded = urllib.parse.quote(clean)
-            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true"
-            res = requests.get(url, timeout=90)
-            if res.status_code == 200 and len(res.content) > 5000:
+            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed=42"
+            res = requests.get(url, timeout=45)
+            if res.status_code == 200 and len(res.content) > 3000:
+                return res.content
+        except:
+            pass
+
+        # Method 3: Pollinations flux (slower but high quality)
+        try:
+            encoded = urllib.parse.quote(clean)
+            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&model=flux"
+            res = requests.get(url, timeout=60)
+            if res.status_code == 200 and len(res.content) > 3000:
                 return res.content
         except:
             pass
@@ -959,15 +968,14 @@ else:
         # ── FIX 4: IMAGE GENERATION ──
         if image_gen:
             with st.chat_message("assistant"):
-                st.info("🎨 Generating image... this takes 30-60 seconds, please wait!")
-                with st.spinner("Creating your image..."):
+                with st.spinner("🎨 Generating image... (~10 seconds)"):
                     img_bytes = generate_image_free(user_input)
                 if img_bytes:
                     st.image(img_bytes, caption=user_input, use_column_width=True)
                     reply = f"🎨 Generated image for: *{user_input}*"
                     st.success("✅ Done!")
                 else:
-                    reply = "⚠️ Image generation timed out. Please try again with a simpler prompt!"
+                    reply = "⚠️ Image generation failed. Please try again!"
                     st.warning(reply)
             msg_id = save_message(st.session_state.username, "assistant", reply, st.session_state.current_session_id)
             st.session_state.chat_history.append({"role":"assistant","content":reply,"id":msg_id})
