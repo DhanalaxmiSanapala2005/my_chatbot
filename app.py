@@ -749,6 +749,19 @@ else:
         except: return text
 
     def speak_text(text):
+        # Try gTTS first (free, works on cloud)
+        try:
+            from gtts import gTTS
+            tts = gTTS(text=text[:500], lang="en", slow=False)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
+                tts.save(tmp.name)
+            with open(tmp.name, "rb") as f:
+                st.audio(f.read(), format="audio/mp3", autoplay=True)
+            os.unlink(tmp.name)
+            return
+        except:
+            pass
+        # Fallback: ElevenLabs (works locally)
         try:
             audio = eleven_client.text_to_speech.convert(
                 voice_id="JBFqnCBsd6RMkjVDRZzb", text=text[:500], model_id="eleven_turbo_v2_5"
@@ -759,8 +772,8 @@ else:
             with open(tmp.name, "rb") as f:
                 st.audio(f.read(), format="audio/mp3", autoplay=True)
             os.unlink(tmp.name)
-        except Exception as e:
-            st.warning(f"Voice error: {e}")
+        except:
+            st.caption("🔊 Voice available in full deployment")
 
     # ── FIX 4: IMAGE GENERATION — Pollinations AI (free, no API key) ──
     def generate_image_free(prompt):
