@@ -11,3 +11,4 @@ pandas
 bcrypt
 replicate
 gtts
+streamlit-mic-recorder
