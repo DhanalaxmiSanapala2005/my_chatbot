@@ -564,72 +564,61 @@ else:
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
         st.markdown("### 🎤 Voice Input")
         # Browser-based voice input — works on cloud & local!
-        st.markdown("""
-        <div style="margin-bottom:8px;">
-            <button onclick="startVoice()" id="voiceBtn"
-                style="background:linear-gradient(90deg,#7c3aed,#4f46e5);color:white;
-                border:none;border-radius:12px;padding:10px 20px;font-size:14px;
-                font-weight:600;cursor:pointer;width:100%;transition:all 0.3s;">
-                🎤 Speak Now
-            </button>
-            <div id="voiceStatus" style="margin-top:6px;font-size:12px;
-                color:rgba(200,180,255,0.7);text-align:center;"></div>
-        </div>
-        <script>
-        function startVoice() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                document.getElementById('voiceStatus').innerText = '❌ Browser does not support voice. Use Chrome!';
-                return;
-            }
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognition = new SR();
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            const btn = document.getElementById('voiceBtn');
-            const status = document.getElementById('voiceStatus');
-
-            btn.innerText = '🔴 Listening...';
-            btn.style.background = 'linear-gradient(90deg,#dc2626,#b91c1c)';
-            status.innerText = '🎤 Speak now...';
-
-            recognition.start();
-
-            recognition.onresult = function(event) {
-                const text = event.results[0][0].transcript;
-                status.innerText = '✅ Got it: ' + text;
-                btn.innerText = '🎤 Speak Now';
-                btn.style.background = 'linear-gradient(90deg,#7c3aed,#4f46e5)';
-
-                // Send text to Streamlit chat input
-                const chatInput = document.querySelector('[data-testid="stChatInput"] textarea');
-                if (chatInput) {
-                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-                    nativeInputValueSetter.call(chatInput, text);
-                    chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    setTimeout(() => {
-                        chatInput.focus();
-                        status.innerText = '✅ Text inserted! Press Enter to send.';
-                    }, 100);
-                }
-            };
-
-            recognition.onerror = function(event) {
-                status.innerText = '❌ Error: ' + event.error + '. Try again!';
-                btn.innerText = '🎤 Speak Now';
-                btn.style.background = 'linear-gradient(90deg,#7c3aed,#4f46e5)';
-            };
-
-            recognition.onend = function() {
-                if (btn.innerText === '🔴 Listening...') {
-                    btn.innerText = '🎤 Speak Now';
-                    btn.style.background = 'linear-gradient(90deg,#7c3aed,#4f46e5)';
-                }
-            };
+        voice_html = """<div style="margin-bottom:8px;">
+<button onclick="startVoice()" id="voiceBtn"
+style="background:linear-gradient(90deg,#7c3aed,#4f46e5);color:white;
+border:none;border-radius:12px;padding:10px 20px;font-size:14px;
+font-weight:600;cursor:pointer;width:100%;transition:all 0.3s;">
+🎤 Speak Now
+</button>
+<div id="voiceStatus" style="margin-top:6px;font-size:12px;
+color:rgba(200,180,255,0.7);text-align:center;min-height:18px;"></div>
+</div>
+<script>
+function startVoice() {
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+        document.getElementById("voiceStatus").innerText = "❌ Use Chrome browser!";
+        return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    const btn = document.getElementById("voiceBtn");
+    const status = document.getElementById("voiceStatus");
+    btn.innerText = "🔴 Listening...";
+    btn.style.background = "linear-gradient(90deg,#dc2626,#b91c1c)";
+    status.innerText = "🎤 Speak now...";
+    recognition.start();
+    recognition.onresult = function(event) {
+        const text = event.results[0][0].transcript;
+        status.innerText = "✅ " + text;
+        btn.innerText = "🎤 Speak Now";
+        btn.style.background = "linear-gradient(90deg,#7c3aed,#4f46e5)";
+        const chatInput = document.querySelector("[data-testid=\"stChatInput\"] textarea");
+        if (chatInput) {
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+            setter.call(chatInput, text);
+            chatInput.dispatchEvent(new Event("input", { bubbles: true }));
+            chatInput.focus();
+            setTimeout(() => { status.innerText = "✅ Press Enter to send!"; }, 200);
         }
-        </script>
-        """, unsafe_allow_html=True)
+    };
+    recognition.onerror = function(event) {
+        status.innerText = "❌ " + event.error + " — try again!";
+        btn.innerText = "🎤 Speak Now";
+        btn.style.background = "linear-gradient(90deg,#7c3aed,#4f46e5)";
+    };
+    recognition.onend = function() {
+        if (btn.innerText === "🔴 Listening...") {
+            btn.innerText = "🎤 Speak Now";
+            btn.style.background = "linear-gradient(90deg,#7c3aed,#4f46e5)";
+        }
+    };
+}
+</script>"""
+        st.markdown(voice_html, unsafe_allow_html=True)
 
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
         st.markdown("### 🧠 Personality")
