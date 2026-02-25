@@ -27,8 +27,6 @@ from auth import (
 load_dotenv()
 init_db()
 
-import os
-
 def get_secret(key):
     try:
         return st.secrets[key]
@@ -37,11 +35,10 @@ def get_secret(key):
 
 groq_client = Groq(api_key=get_secret("GROQ_API_KEY"))
 eleven_client = ElevenLabs(api_key=get_secret("ELEVENLABS_API_KEY"))
-REPLICATE_API_KEY = os.getenv("REPLICATE_API_KEY", "")
 
-st.set_page_config(page_title="My AI Chatbot", page_icon="🤖", layout="wide")
+# ── FIX 1: NAME CHANGED ──
+st.set_page_config(page_title="SmartBot AI", page_icon="🤖", layout="wide")
 
-# ─── STYLES ────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -49,44 +46,57 @@ st.markdown("""
 
 * { font-family: 'Inter', sans-serif !important; box-sizing: border-box; }
 
-/* ── HIDE STREAMLIT DEFAULT HEADER & FOOTER & MENU ── */
 #MainMenu { visibility: hidden !important; }
 header[data-testid="stHeader"] { display: none !important; }
 footer { visibility: hidden !important; }
 .stDeployButton { display: none !important; }
 [data-testid="stToolbar"] { display: none !important; }
 
-/* Remove white top gap */
 .stApp > div:first-child { padding-top: 0 !important; }
 .block-container { padding-top: 1rem !important; }
 
-/* ── KEEP SIDEBAR ALWAYS VISIBLE ── */
 [data-testid="stSidebar"] { min-width: 260px !important; width: 260px !important; display: block !important; visibility: visible !important; transform: translateX(0) !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 section[data-testid="stSidebar"] > div { width: 260px !important; }
 
-/* ── HIDE AVATAR NAME LABEL completely ── */
 [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"] { display: none !important; }
 [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"] { display: none !important; }
 .stChatMessage > div:first-child { display: none !important; }
 
-/* ── FIX WHITE BOTTOM CHAT INPUT BAR ── */
-[data-testid="stBottom"] { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e) !important; border-top: 1px solid rgba(255,255,255,0.08) !important; }
+/* ── FIX 2: CHAT INPUT VISIBLE ON CLOUD ── */
+[data-testid="stBottom"] {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e) !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
 [data-testid="stBottom"] > div { background: transparent !important; }
+[data-testid="stChatInput"] {
+    background: rgba(30,25,80,0.95) !important;
+    border: 1.5px solid rgba(124,58,237,0.5) !important;
+    border-radius: 14px !important;
+}
+[data-testid="stChatInput"] textarea {
+    color: #ffffff !important;
+    background: transparent !important;
+    font-size: 15px !important;
+    caret-color: #a78bfa !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+    color: rgba(200,180,255,0.55) !important;
+}
 
-/* ── FIX QUICK PROMPT BUTTONS — no text wrapping ── */
 .stButton > button { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; font-size: 13px !important; padding: 8px 12px !important; }
 
-/* ── HIDE DUPLICATE NAV BUTTONS ── */
 [data-testid="stSidebar"] div[data-key="nav_chat"] button,
 [data-testid="stSidebar"] div[data-key="nav_profile"] button {
     opacity: 0 !important; height: 0 !important; padding: 0 !important;
     margin: 0 !important; overflow: hidden !important; pointer-events: none !important; border: none !important;
 }
+
 .stApp { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e) !important; }
 .stApp *, .stApp p, .stApp span, .stApp div, .stApp label,
 .stApp h1, .stApp h2, .stApp h3, .stApp h4,
 [data-testid="stSidebar"] * { color: white !important; }
+
 input[type="text"], input[type="password"], input[type="email"],
 .stTextInput input, .stChatInput textarea {
     background: rgba(30, 25, 80, 0.85) !important; color: #ffffff !important;
@@ -128,7 +138,6 @@ section[data-testid="stSidebar"] { background: rgba(15,12,41,0.95) !important; b
 .stat-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 16px; text-align: center; }
 .divider { height: 1px; background: rgba(255,255,255,0.1); margin: 16px 0; }
 
-/* ── CODE BLOCK ── */
 .code-wrapper { position: relative; margin: 10px 0; }
 .code-block {
     background: #0d1117 !important; border: 1px solid rgba(255,255,255,0.1);
@@ -153,7 +162,6 @@ section[data-testid="stSidebar"] { background: rgba(15,12,41,0.95) !important; b
 .cmt { color: #6272a4 !important; font-style: italic; } .fn2 { color: #50fa7b !important; }
 .num { color: #bd93f9 !important; } .cls { color: #8be9fd !important; }
 
-/* ── INLINE UPLOAD ── */
 .plus-btn button {
     background: linear-gradient(135deg,#7c3aed,#4f46e5) !important; border-radius: 50% !important;
     width: 42px !important; height: 42px !important; padding: 0 !important;
@@ -182,14 +190,12 @@ section[data-testid="stSidebar"] { background: rgba(15,12,41,0.95) !important; b
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .file-badge .st { color: rgba(167,139,250,0.7) !important; font-size: 11px; }
 
-/* ── CONTEXT BANNERS ── */
 .ctx-banner { border-radius: 12px; padding: 10px 16px; font-size: 13px;
     display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .ctx-pdf  { background: rgba(34,197,94,0.12);  border: 1px solid rgba(34,197,94,0.35);  color: #6ee7b7 !important; }
 .ctx-file { background: rgba(59,130,246,0.12);  border: 1px solid rgba(59,130,246,0.35);  color: #93c5fd !important; }
 .ctx-img  { background: rgba(245,158,11,0.12);  border: 1px solid rgba(245,158,11,0.35);  color: #fcd34d !important; }
 
-/* ── PROFILE ── */
 .profile-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 28px; margin-bottom: 16px; }
 .profile-avatar { width: 72px; height: 72px; background: linear-gradient(135deg,#7c3aed,#4f46e5);
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -199,7 +205,6 @@ section[data-testid="stSidebar"] { background: rgba(15,12,41,0.95) !important; b
 .stat-num { font-size: 22px; font-weight: 700; color: #a78bfa !important; }
 .stat-lbl { font-size: 11px; color: rgba(255,255,255,0.5) !important; margin-top: 2px; }
 
-/* ── COMPACT PILL NAV — shrink the functional buttons to near-invisible ── */
 [data-testid="stSidebar"] div[data-key="nav_chat"] button,
 [data-testid="stSidebar"] div[data-key="nav_profile"] button {
     padding: 2px 8px !important; font-size: 11px !important;
@@ -211,7 +216,6 @@ section[data-testid="stSidebar"] { background: rgba(15,12,41,0.95) !important; b
 </style>
 """, unsafe_allow_html=True)
 
-# ─── JS: copy-to-clipboard + remember-me cookie ───────────
 st.markdown("""
 <script>
 function copyCode(id) {
@@ -232,7 +236,7 @@ function clearRememberCookie(){
 </script>
 """, unsafe_allow_html=True)
 
-# ─── SESSION STATE ─────────────────────────────────────────
+# ── FIX 1 + FIX 3: NAME & SUBTITLE ──
 defaults = {
     "logged_in": False, "username": "", "user_role": "user",
     "chat_history": [], "voice_text": "",
@@ -242,14 +246,13 @@ defaults = {
     "inline_file_content": "", "inline_file_name": "",
     "inline_image_b64": "", "inline_image_name": "",
     "current_session_id": None, "active_page": "chat",
-    "branding": {"name": "My AI Chatbot", "subtitle": "Powered by Groq + ElevenLabs"},
+    "branding": {"name": "SmartBot AI", "subtitle": "Your 24/7 AI Assistant"},
     "reset_token_input": "",
 }
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ─── UTILITY FUNCTIONS ─────────────────────────────────────
 def clear_inline_file():
     for k in ["inline_pdf_text","inline_pdf_name","inline_file_content",
               "inline_file_name","inline_image_b64","inline_image_name"]:
@@ -271,7 +274,6 @@ def inline_name():
             st.session_state.inline_file_name or
             st.session_state.inline_image_name)
 
-# ─── CODE SYNTAX HIGHLIGHTER ──────────────────────────────
 def highlight_code(code: str, lang: str = "") -> str:
     lang = lang.lower().strip()
     h = code.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
@@ -300,7 +302,6 @@ def highlight_code(code: str, lang: str = "") -> str:
     return h
 
 def render_message_with_code(content: str, msg_index: int):
-    """Render message, replacing ```...``` blocks with highlighted HTML."""
     pattern = re.compile(r'```(\w*)\n?([\s\S]*?)```', re.MULTILINE)
     last = 0
     block_num = 0
@@ -323,7 +324,6 @@ def render_message_with_code(content: str, msg_index: int):
     if last < len(content):
         st.markdown(content[last:])
 
-# ─── CHECK RESET TOKEN ────────────────────────────────────
 query_params = st.query_params
 if "reset_token" in query_params and not st.session_state.logged_in:
     st.session_state.reset_token_input = query_params["reset_token"]
@@ -334,6 +334,7 @@ if "reset_token" in query_params and not st.session_state.logged_in:
 if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        # ── FIX 1: SmartBot AI on login page ──
         st.markdown("""
             <div style='text-align:center;padding:40px 0 30px 0;'>
                 <div style='width:60px;height:60px;background:linear-gradient(135deg,#7c3aed,#4f46e5);
@@ -341,8 +342,8 @@ if not st.session_state.logged_in:
                     font-size:30px;margin:0 auto 16px auto;'>🤖</div>
                 <h1 style='font-size:28px;font-weight:700;margin:0;
                     background:linear-gradient(90deg,#a78bfa,#818cf8);
-                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>My AI Chatbot</h1>
-                <p style='color:rgba(255,255,255,0.5);margin-top:8px;font-size:14px;'>Your intelligent AI assistant</p>
+                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>SmartBot AI</h1>
+                <p style='color:rgba(255,255,255,0.5);margin-top:8px;font-size:14px;'>Your 24/7 AI Assistant</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -444,8 +445,8 @@ if not st.session_state.logged_in:
 else:
     is_admin = st.session_state.user_role == "admin"
 
-    # ── SIDEBAR ────────────────────────────────────────────
     with st.sidebar:
+        # ── FIX 3: NO "Powered by Groq + ElevenLabs" ──
         st.markdown(f"""
             <div style='padding:20px 0;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:16px;'>
                 <div style='display:flex;align-items:center;gap:12px;'>
@@ -470,7 +471,6 @@ else:
             💬 {remaining}/30 messages left this hour
         </div>""", unsafe_allow_html=True)
 
-        # Page navigation — compact pill nav
         chat_active    = st.session_state.active_page == "chat"
         profile_active = st.session_state.active_page == "profile"
         st.markdown(f"""
@@ -478,15 +478,13 @@ else:
             <div style="flex:1;text-align:center;
                 background:{'linear-gradient(90deg,#7c3aed,#4f46e5)' if chat_active else 'rgba(255,255,255,0.06)'};
                 border:1px solid {'#7c3aed' if chat_active else 'rgba(255,255,255,0.12)'};
-                border-radius:20px;padding:6px 0;font-size:13px;font-weight:600;
-                cursor:pointer;transition:all 0.2s;">
+                border-radius:20px;padding:6px 0;font-size:13px;font-weight:600;">
                 💬 Chat
             </div>
             <div style="flex:1;text-align:center;
                 background:{'linear-gradient(90deg,#7c3aed,#4f46e5)' if profile_active else 'rgba(255,255,255,0.06)'};
                 border:1px solid {'#7c3aed' if profile_active else 'rgba(255,255,255,0.12)'};
-                border-radius:20px;padding:6px 0;font-size:13px;font-weight:600;
-                cursor:pointer;transition:all 0.2s;">
+                border-radius:20px;padding:6px 0;font-size:13px;font-weight:600;">
                 👤 Profile
             </div>
         </div>
@@ -577,7 +575,7 @@ else:
                     st.session_state.voice_text = text
             except sr.WaitTimeoutError: st.error("⏰ No speech detected!")
             except sr.UnknownValueError: st.error("❌ Could not understand!")
-            except Exception as e: st.error(f"Error: {e}")
+            except Exception as e: st.error(f"Voice not available on cloud: {e}")
 
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
         st.markdown("### 🧠 Personality")
@@ -593,7 +591,7 @@ else:
         }
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-        st.markdown("### 👤 Custom Branding")
+        st.markdown("### 🎨 Custom Branding")
         new_name     = st.text_input("Bot Name", value=st.session_state.branding["name"])
         new_subtitle = st.text_input("Subtitle",  value=st.session_state.branding["subtitle"])
         if st.button("✅ Apply Branding"):
@@ -604,8 +602,7 @@ else:
         export_text = export_history_text(st.session_state.username, st.session_state.current_session_id)
         st.download_button(
             label="⬇️ Download as TXT", data=export_text,
-            file_name=f"chat_{st.session_state.username}_{st.session_state.current_session_id}.txt",
-            mime="text/plain"
+            file_name=f"chat_{st.session_state.username}.txt", mime="text/plain"
         )
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
@@ -679,14 +676,13 @@ else:
                 🤖 {st.session_state.branding['name']}
             </h2>
             <div>
-                <span class='feature-badge'>⚡ Groq LLM</span>
-                <span class='feature-badge'>🔊 ElevenLabs TTS</span>
-                <span class='feature-badge'>🎤 Speech Input</span>
+                <span class='feature-badge'>⚡ Fast AI</span>
+                <span class='feature-badge'>🔊 Voice Output</span>
                 <span class='feature-badge'>🌐 Web Search</span>
                 <span class='feature-badge'>📄 PDF Chat</span>
                 <span class='feature-badge'>🌍 Multi-Language</span>
                 <span class='feature-badge'>🎨 Image Gen</span>
-                <span class='feature-badge'>📊 CSV/TXT</span>
+                <span class='feature-badge'>📊 Data Analysis</span>
                 <span class='feature-badge'>🖼️ Vision</span>
             </div>
         </div>
@@ -723,22 +719,20 @@ else:
         with cols[i]:
             if st.button(p, key=f"prompt_{i}"): st.session_state.voice_text = p + " "
 
-    # Context banners
     if st.session_state.pdf_text:
-        st.markdown('<div class="ctx-banner ctx-pdf">📄 <b>PDF loaded</b> via sidebar — ask me anything about it!</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ctx-banner ctx-pdf">📄 <b>PDF loaded</b> — ask me anything about it!</div>', unsafe_allow_html=True)
     if st.session_state.file_content:
-        st.markdown('<div class="ctx-banner ctx-file">📊 <b>File loaded</b> via sidebar — ask me to analyze it!</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ctx-banner ctx-file">📊 <b>File loaded</b> — ask me to analyze it!</div>', unsafe_allow_html=True)
     if st.session_state.inline_pdf_name:
-        st.markdown(f'<div class="ctx-banner ctx-pdf">📄 <b>{st.session_state.inline_pdf_name}</b> attached · Ready to send</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ctx-banner ctx-pdf">📄 <b>{st.session_state.inline_pdf_name}</b> attached</div>', unsafe_allow_html=True)
     if st.session_state.inline_file_name:
-        st.markdown(f'<div class="ctx-banner ctx-file">📊 <b>{st.session_state.inline_file_name}</b> attached · Ready to send</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ctx-banner ctx-file">📊 <b>{st.session_state.inline_file_name}</b> attached</div>', unsafe_allow_html=True)
     if st.session_state.inline_image_name:
-        st.markdown(f'<div class="ctx-banner ctx-img">🖼️ <b>{st.session_state.inline_image_name}</b> attached · Ready to send</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ctx-banner ctx-img">🖼️ <b>{st.session_state.inline_image_name}</b> attached</div>', unsafe_allow_html=True)
 
     tokens_used = get_token_usage(st.session_state.username)
     st.caption(f"🔢 Tokens used this month: **{tokens_used:,}**")
 
-    # ── HELPER FUNCTIONS ───────────────────────────────────
     def search_web(query):
         try:
             with DDGS() as ddgs:
@@ -768,36 +762,31 @@ else:
         except Exception as e:
             st.warning(f"Voice error: {e}")
 
-    def generate_image_replicate(prompt):
-        """Try multiple free image APIs until one works."""
+    # ── FIX 4: IMAGE GENERATION — Pollinations AI (free, no API key) ──
+    def generate_image_free(prompt):
         import urllib.parse
+        clean = prompt.strip()
+        for kw in ["generate","create","draw","make","show me","give me"]:
+            clean = clean.lower().replace(kw, "").strip()
+        clean = (clean or prompt) + ", highly detailed, beautiful, 4k"
 
-        # Option 1: Lexica.art — free, no API key, real Stable Diffusion images
+        # Method 1: Pollinations flux model
         try:
-            encoded = urllib.parse.quote(prompt)
-            res = requests.get(
-                f"https://lexica.art/api/v1/search?q={encoded}",
-                timeout=15
-            )
-            if res.status_code == 200:
-                data = res.json()
-                images = data.get("images", [])
-                if images:
-                    img_url = images[0].get("src", "")
-                    if img_url:
-                        img_res = requests.get(img_url, timeout=20)
-                        if img_res.status_code == 200:
-                            return img_res.content
+            encoded = urllib.parse.quote(clean)
+            seed = abs(hash(prompt)) % 99999
+            url = f"https://image.pollinations.ai/prompt/{encoded}?width=768&height=768&nologo=true&seed={seed}&model=flux"
+            res = requests.get(url, timeout=90)
+            if res.status_code == 200 and len(res.content) > 5000:
+                return res.content
         except:
             pass
 
-        # Option 2: Pollinations with longer timeout
+        # Method 2: Pollinations default model fallback
         try:
-            encoded = urllib.parse.quote(prompt)
-            seed = abs(hash(prompt)) % 99999
-            img_url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}"
-            res = requests.get(img_url, timeout=90)
-            if res.status_code == 200:
+            encoded = urllib.parse.quote(clean)
+            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true"
+            res = requests.get(url, timeout=90)
+            if res.status_code == 200 and len(res.content) > 5000:
                 return res.content
         except:
             pass
@@ -818,7 +807,6 @@ else:
         except Exception as e:
             return f"Image analysis error: {e}"
 
-    # ── CHAT DISPLAY ───────────────────────────────────────
     for i, chat in enumerate(st.session_state.chat_history):
         with st.chat_message(chat["role"]):
             render_message_with_code(chat["content"], i)
@@ -831,9 +819,6 @@ else:
                     if st.button("👎", key=f"down_{i}"):
                         save_reaction(st.session_state.username, chat["id"], "thumbs_down"); st.toast("Thanks! 👎")
 
-    # ════════════════════════════════════════════════════
-    #  ＋ INLINE UPLOAD BAR
-    # ════════════════════════════════════════════════════
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     plus_col, options_col = st.columns([1, 11])
 
@@ -846,7 +831,6 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     with options_col:
-        # Show type selector popup
         if st.session_state.show_upload_popup and not has_inline_file():
             st.markdown("<span style='font-size:13px;color:rgba(255,255,255,0.6);'>Attach:</span>", unsafe_allow_html=True)
             pc1, pc2, pc3, _ = st.columns([2, 2, 2, 6])
@@ -863,7 +847,6 @@ else:
                 if st.button("📊 CSV/TXT", key="pick_csv"): st.session_state.inline_upload_type = "csvtxt"
                 st.markdown('</div>', unsafe_allow_html=True)
 
-        # File uploader per chosen type
         if st.session_state.inline_upload_type == "image" and not has_inline_file():
             upl = st.file_uploader("Attach image", type=["png","jpg","jpeg","webp"], key="iup_img")
             if upl:
@@ -899,7 +882,6 @@ else:
                 st.session_state.show_upload_popup  = False
                 st.rerun()
 
-        # Preview badge + remove button
         if has_inline_file():
             badge_col, rm_col = st.columns([10, 1])
             with badge_col:
@@ -914,21 +896,20 @@ else:
                     clear_inline_file(); st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── CHAT INPUT ─────────────────────────────────────────
-    user_input = st.session_state.voice_text or st.chat_input("💬 Type your message or use 🎤 Voice Input...")
+    user_input = st.session_state.voice_text or st.chat_input("💬 Type your message...")
     if st.session_state.voice_text:
         st.session_state.voice_text = ""
 
     if user_input:
         allowed, remaining = check_rate_limit(st.session_state.username)
         if not allowed and not is_admin:
-            st.error("⏳ Rate limit reached! 30 messages per hour. Please wait."); st.stop()
+            st.error("⏳ Rate limit reached! 30 messages per hour."); st.stop()
 
         if not st.session_state.current_session_id:
             st.session_state.current_session_id = create_session(st.session_state.username)
 
-        sessions    = get_sessions(st.session_state.username)
-        curr_sess   = next((s for s in sessions if s["id"]==st.session_state.current_session_id), None)
+        sessions  = get_sessions(st.session_state.username)
+        curr_sess = next((s for s in sessions if s["id"]==st.session_state.current_session_id), None)
         if curr_sess and curr_sess["msg_count"] == 0:
             rename_session(st.session_state.current_session_id, user_input[:35])
 
@@ -944,22 +925,22 @@ else:
         st.session_state.chat_history.append({"role":"user","content":user_input,"id":msg_id})
         record_message_usage(st.session_state.username)
 
-        # ── ROUTE: IMAGE GEN vs VISION vs LLM ────────────
-        # image_gen toggle ON = always generate image, skip LLM entirely
+        # ── FIX 4: IMAGE GENERATION ──
         if image_gen:
             with st.chat_message("assistant"):
-                with st.spinner("🎨 Generating image... please wait (~15s)"):
-                    img_bytes = generate_image_replicate(user_input)
-                    if img_bytes:
-                        st.image(img_bytes, caption=user_input, width=700)
-                        reply = f"🎨 Generated image for: *{user_input}*"
-                    else:
-                        reply = "⚠️ Image generation failed. Check your internet connection."
-                        st.markdown(reply)
+                st.info("🎨 Generating image... this takes 30-60 seconds, please wait!")
+                with st.spinner("Creating your image..."):
+                    img_bytes = generate_image_free(user_input)
+                if img_bytes:
+                    st.image(img_bytes, caption=user_input, use_column_width=True)
+                    reply = f"🎨 Generated image for: *{user_input}*"
+                    st.success("✅ Done!")
+                else:
+                    reply = "⚠️ Image generation timed out. Please try again with a simpler prompt!"
+                    st.warning(reply)
             msg_id = save_message(st.session_state.username, "assistant", reply, st.session_state.current_session_id)
             st.session_state.chat_history.append({"role":"assistant","content":reply,"id":msg_id})
 
-        # ── INLINE IMAGE VISION ─────────────────────────
         elif st.session_state.inline_image_b64:
             with st.chat_message("assistant"):
                 with st.spinner("🔍 Analyzing image..."):
@@ -974,7 +955,6 @@ else:
             st.session_state.chat_history.append({"role":"assistant","content":reply,"id":msg_id})
             clear_inline_file()
 
-        # ── LLM RESPONSE ────────────────────────────────
         else:
             system_msg = personality_prompts[personality]
             if st.session_state.pdf_text:
@@ -986,7 +966,7 @@ else:
             if st.session_state.inline_file_content:
                 system_msg += f"\n\nAttached File:\n{st.session_state.inline_file_content}"
             if web_search:
-                system_msg += " Use web search results to give accurate, up-to-date answers."
+                system_msg += " Use web search results to give accurate answers."
             if language != "English":
                 system_msg += f" Always respond in {language}."
 
@@ -994,7 +974,7 @@ else:
             if web_search:
                 with st.spinner("🌐 Searching web..."):
                     search_results = search_web(user_input)
-                messages.append({"role":"user","content":f"Web results:\n{search_results}\n\nUser question: {user_input}"})
+                messages.append({"role":"user","content":f"Web results:\n{search_results}\n\nQuestion: {user_input}"})
             else:
                 for chat in st.session_state.chat_history[:-1]:
                     messages.append({"role":chat["role"],"content":chat["content"]})
@@ -1019,9 +999,7 @@ else:
                 stream_placeholder.empty()
                 reply = full_reply
                 render_message_with_code(reply, len(st.session_state.chat_history))
-
-                est_tokens = len(reply)//4 + len(user_input)//4
-                save_token_usage(st.session_state.username, est_tokens)
+                save_token_usage(st.session_state.username, len(reply)//4 + len(user_input)//4)
 
                 if language != "English":
                     with st.spinner(f"🌍 Translating to {language}..."):
@@ -1036,7 +1014,7 @@ else:
                 with r1:
                     if st.button("👍", key="up_new"): st.toast("Thanks! 👍")
                 with r2:
-                    if st.button("👎", key="dn_new"): st.toast("Thanks for the feedback! 👎")
+                    if st.button("👎", key="dn_new"): st.toast("Thanks! 👎")
 
             msg_id = save_message(st.session_state.username, "assistant", reply, st.session_state.current_session_id)
             st.session_state.chat_history.append({"role":"assistant","content":reply,"id":msg_id})
