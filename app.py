@@ -799,39 +799,11 @@ else:
         for kw in ["generate","create","draw","make","show me","give me","an image of","a picture of"]:
             clean = clean.lower().replace(kw, "").strip()
         clean = (clean or prompt).strip()
-
-        # Method 1: Pollinations turbo (fastest ~5-10s)
-        try:
-            encoded = urllib.parse.quote(clean)
-            seed = abs(hash(prompt)) % 9999
-            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}&model=turbo"
-            res = requests.get(url, timeout=30)
-            if res.status_code == 200 and len(res.content) > 3000:
-                return res.content
-        except:
-            pass
-
-        # Method 2: Pollinations default (fast fallback)
-        try:
-            encoded = urllib.parse.quote(clean)
-            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed=42"
-            res = requests.get(url, timeout=45)
-            if res.status_code == 200 and len(res.content) > 3000:
-                return res.content
-        except:
-            pass
-
-        # Method 3: Pollinations flux (slower but high quality)
-        try:
-            encoded = urllib.parse.quote(clean)
-            url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&model=flux"
-            res = requests.get(url, timeout=60)
-            if res.status_code == 200 and len(res.content) > 3000:
-                return res.content
-        except:
-            pass
-
-        return None
+        encoded = urllib.parse.quote(clean)
+        seed = abs(hash(prompt)) % 9999
+        # Return URL directly — browser loads image, bypasses server restrictions
+        url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}&model=turbo"
+        return url
 
     def describe_image_with_groq(b64_image: str, user_question: str) -> str:
         try:
@@ -968,15 +940,17 @@ else:
         # ── FIX 4: IMAGE GENERATION ──
         if image_gen:
             with st.chat_message("assistant"):
-                with st.spinner("🎨 Generating image... (~10 seconds)"):
-                    img_bytes = generate_image_free(user_input)
-                if img_bytes:
-                    st.image(img_bytes, caption=user_input, use_column_width=True)
-                    reply = f"🎨 Generated image for: *{user_input}*"
-                    st.success("✅ Done!")
-                else:
-                    reply = "⚠️ Image generation failed. Please try again!"
-                    st.warning(reply)
+                img_url = generate_image_free(user_input)
+                # Display image via HTML — browser fetches it directly, no server download needed
+                html = f'''<div style="text-align:center;padding:8px;">
+<img src="{img_url}" style="max-width:100%;border-radius:12px;
+border:1px solid rgba(124,58,237,0.4);"
+onerror="this.outerHTML='<p style=color:orange>⚠️ Try again with a simpler prompt!</p>'">
+<p style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;">🎨 {user_input}</p>
+</div>'''
+                st.markdown(html, unsafe_allow_html=True)
+                reply = f"🎨 Generated image for: *{user_input}*"
+                st.success("✅ Image loaded!")
             msg_id = save_message(st.session_state.username, "assistant", reply, st.session_state.current_session_id)
             st.session_state.chat_history.append({"role":"assistant","content":reply,"id":msg_id})
 
