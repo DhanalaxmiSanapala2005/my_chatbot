@@ -27,8 +27,16 @@ from auth import (
 load_dotenv()
 init_db()
 
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-eleven_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+import os
+
+def get_secret(key):
+    try:
+        return st.secrets[key]
+    except:
+        return os.getenv(key, "")
+
+groq_client = Groq(api_key=get_secret("GROQ_API_KEY"))
+eleven_client = ElevenLabs(api_key=get_secret("ELEVENLABS_API_KEY"))
 REPLICATE_API_KEY = os.getenv("REPLICATE_API_KEY", "")
 
 st.set_page_config(page_title="My AI Chatbot", page_icon="🤖", layout="wide")
