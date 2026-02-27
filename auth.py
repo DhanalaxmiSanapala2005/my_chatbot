@@ -12,17 +12,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DB_PATH = "chatbot.db"
-SMTP_EMAIL = os.getenv("SMTP_EMAIL")        # your Gmail address
-SMTP_PASSWORD = os.getenv("SMTP_APP_PASSWORD")  # Gmail App Password
-RATE_LIMIT_PER_HOUR = 30                    # max messages per user per hour
-
+SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_APP_PASSWORD")
+RATE_LIMIT_PER_HOUR = 30
 
 # ─── DB INIT ──────────────────────────────────────────────
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    # Users table with role support
     c.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -32,7 +30,6 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Chat sessions table (named sessions like ChatGPT)
     c.execute('''CREATE TABLE IF NOT EXISTS chat_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -40,7 +37,6 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Chat history linked to sessions
     c.execute('''CREATE TABLE IF NOT EXISTS chat_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -51,7 +47,6 @@ def init_db():
         FOREIGN KEY(session_id) REFERENCES chat_sessions(id)
     )''')
 
-    # Message reactions (thumbs up/down)
     c.execute('''CREATE TABLE IF NOT EXISTS message_reactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -60,7 +55,6 @@ def init_db():
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Password reset tokens
     c.execute('''CREATE TABLE IF NOT EXISTS reset_tokens (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -69,14 +63,12 @@ def init_db():
         used INTEGER DEFAULT 0
     )''')
 
-    # Rate limiting table
     c.execute('''CREATE TABLE IF NOT EXISTS rate_limits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Token usage tracking
     c.execute('''CREATE TABLE IF NOT EXISTS token_usage (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -95,6 +87,13 @@ def init_db():
     except sqlite3.IntegrityError:
         pass
 
+    # ── Make Dhanalaxmi admin automatically ──
+    try:
+        c.execute("UPDATE users SET role='admin' WHERE username='Dhanalaxmi'")
+        conn.commit()
+    except:
+        pass
+
     conn.close()
 
 
@@ -104,8 +103,10 @@ def register_user(username, email, password):
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-        c.execute("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')",
-                  (username, email, hashed))
+        # Auto admin for Dhanalaxmi
+        role = 'admin' if username == 'Dhanalaxmi' else 'user'
+        c.execute("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
+                  (username, email, hashed, role))
         conn.commit()
         conn.close()
         return True, "Account created successfully!"
@@ -125,7 +126,7 @@ def login_user(username, password):
         result = c.fetchone()
         conn.close()
         if result and bcrypt.checkpw(password.encode(), result[0]):
-            return True, result[1]   # returns role: 'user' or 'admin'
+            return True, result[1]
         return False, "Invalid username or password!"
     except Exception as e:
         return False, str(e)
@@ -180,7 +181,6 @@ def change_user_role(username, new_role):
 
 # ─── RATE LIMITING ─────────────────────────────────────────
 def check_rate_limit(username):
-    """Returns (allowed: bool, remaining: int)"""
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
@@ -342,7 +342,6 @@ def clear_history(username, session_id=None):
 
 
 def export_history_text(username, session_id=None):
-    """Export chat history as plain text string."""
     history = load_history(username, session_id)
     lines = [f"Chat Export — {username} — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n{'='*60}\n"]
     for msg in history:
@@ -356,7 +355,6 @@ def save_reaction(username, message_id, reaction):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        # Upsert — replace old reaction for same message
         c.execute("DELETE FROM message_reactions WHERE username=? AND message_id=?",
                   (username, message_id))
         c.execute("INSERT INTO message_reactions (username, message_id, reaction) VALUES (?, ?, ?)",
@@ -375,7 +373,6 @@ def _generate_token(length=32):
 
 
 def request_password_reset(email):
-    """Generate a reset token and email it."""
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
@@ -384,17 +381,13 @@ def request_password_reset(email):
         if not result:
             conn.close()
             return False, "No account found with that email."
-
         username = result[0]
         token = _generate_token()
         expires_at = datetime.now() + timedelta(hours=1)
-
         c.execute("INSERT INTO reset_tokens (username, token, expires_at) VALUES (?, ?, ?)",
                   (username, token, expires_at))
         conn.commit()
         conn.close()
-
-        # Send email
         _send_reset_email(email, username, token)
         return True, "Reset link sent to your email!"
     except Exception as e:
@@ -440,15 +433,14 @@ def reset_password(token, new_password):
 def _send_reset_email(to_email, username, token):
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "🔐 Password Reset — My AI Chatbot"
+        msg["Subject"] = "🔐 Password Reset — SmartBot AI"
         msg["From"] = SMTP_EMAIL
         msg["To"] = to_email
-
-        reset_link = f"http://localhost:8501/?reset_token={token}"
+        reset_link = f"https://dhana-smartbot.streamlit.app/?reset_token={token}"
         html = f"""
         <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;
                     background:#0f0c29;color:white;border-radius:16px;padding:32px;">
-            <h2 style="color:#a78bfa;">Password Reset</h2>
+            <h2 style="color:#a78bfa;">Password Reset — SmartBot AI</h2>
             <p>Hi <b>{username}</b>,</p>
             <p>Click the button below to reset your password. This link expires in <b>1 hour</b>.</p>
             <a href="{reset_link}" style="display:inline-block;background:linear-gradient(90deg,#7c3aed,#4f46e5);
@@ -461,7 +453,6 @@ def _send_reset_email(to_email, username, token):
         </div>
         """
         msg.attach(MIMEText(html, "html"))
-
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(SMTP_EMAIL, SMTP_PASSWORD)
             server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
