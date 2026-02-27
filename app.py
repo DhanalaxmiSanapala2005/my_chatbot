@@ -27,6 +27,28 @@ from auth import (
 load_dotenv()
 init_db()
 
+# Auto make Dhanalaxmi admin
+try:
+    import sqlite3 as _sq
+    _cn = _sq.connect("chatbot.db")
+    _cu = _cn.cursor()
+    _cu.execute("UPDATE users SET role='admin' WHERE username='Dhanalaxmi'")
+    _cn.commit()
+    _cn.close()
+except:
+    pass
+
+# Auto make Dhanalaxmi admin
+try:
+    import sqlite3 as _sqlite3
+    _conn = _sqlite3.connect("chatbot.db")
+    _c = _conn.cursor()
+    _c.execute("UPDATE users SET role='admin' WHERE username='Dhanalaxmi'")
+    _conn.commit()
+    _conn.close()
+except:
+    pass
+
 def get_secret(key):
     try:
         return st.secrets[key]
@@ -801,9 +823,30 @@ else:
         clean = (clean or prompt).strip()
         encoded = urllib.parse.quote(clean)
         seed = abs(hash(prompt)) % 9999
-        # Return URL directly — browser loads image, bypasses server restrictions
-        url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}&model=turbo"
-        return url
+
+        # Try downloading with session and headers to avoid blocks
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+            "Referer": "https://pollinations.ai/",
+        }
+        urls = [
+            f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}&model=turbo",
+            f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true&seed={seed}",
+            f"https://image.pollinations.ai/prompt/{encoded}?nologo=true&seed={seed}",
+        ]
+        for url in urls:
+            try:
+                session = requests.Session()
+                session.headers.update(headers)
+                res = session.get(url, timeout=60, stream=True)
+                if res.status_code == 200 and "image" in res.headers.get("content-type",""):
+                    content_bytes = b"".join(res.iter_content(chunk_size=8192))
+                    if len(content_bytes) > 3000:
+                        return content_bytes
+            except:
+                continue
+        return None
 
     def describe_image_with_groq(b64_image: str, user_question: str) -> str:
         try:
@@ -940,17 +983,20 @@ else:
         # ── FIX 4: IMAGE GENERATION ──
         if image_gen:
             with st.chat_message("assistant"):
-                img_url = generate_image_free(user_input)
-                # Display image via HTML — browser fetches it directly, no server download needed
-                html = f'''<div style="text-align:center;padding:8px;">
-<img src="{img_url}" style="max-width:100%;border-radius:12px;
-border:1px solid rgba(124,58,237,0.4);"
-onerror="this.outerHTML='<p style=color:orange>⚠️ Try again with a simpler prompt!</p>'">
-<p style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;">🎨 {user_input}</p>
-</div>'''
-                st.markdown(html, unsafe_allow_html=True)
-                reply = f"🎨 Generated image for: *{user_input}*"
-                st.success("✅ Image loaded!")
+                with st.spinner("🎨 Generating image... please wait!"):
+                    img_bytes = generate_image_free(user_input)
+                if img_bytes:
+                    st.image(img_bytes, caption=f"🎨 {user_input}", use_column_width=True)
+                    reply = f"🎨 Generated image for: *{user_input}*"
+                    st.success("✅ Image generated!")
+                else:
+                    reply = "⚠️ Image generation failed. Streamlit Cloud blocks image downloads. Try hosting on Railway or Render for full image support!"
+                    st.warning(reply)
+                    # Show direct link as fallback
+                    import urllib.parse
+                    encoded = urllib.parse.quote(user_input)
+                    img_url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true"
+                    st.markdown(f"🔗 [Click here to see the image]({img_url})", unsafe_allow_html=False)
             msg_id = save_message(st.session_state.username, "assistant", reply, st.session_state.current_session_id)
             st.session_state.chat_history.append({"role":"assistant","content":reply,"id":msg_id})
 
